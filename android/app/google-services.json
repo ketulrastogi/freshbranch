@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "269856783149",
+    "firebase_url": "https://freshbranch-553ce.firebaseio.com",
+    "project_id": "freshbranch-553ce",
+    "storage_bucket": "freshbranch-553ce.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:269856783149:android:3f8983061a093c70ca71a4",
+        "android_client_info": {
+          "package_name": "in.freshbranch"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "269856783149-ak0dbhjmr0h74n503pdmmtgngs6dhs44.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "in.freshbranch",
+            "certificate_hash": "0659a65a2ac47283c215c54e28c9f42c4f1be90c"
+          }
+        },
+        {
+          "client_id": "269856783149-b65bsg565376j8s4eiaogm1gqeg2p42n.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCfiYiaIy_bPmb4bjjwhoGmkIiDGyZAKQA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "269856783149-b65bsg565376j8s4eiaogm1gqeg2p42n.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
