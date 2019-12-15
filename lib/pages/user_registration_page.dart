@@ -11,7 +11,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:simple_autocomplete_formfield/simple_autocomplete_formfield.dart';
 
-
 class UserRegistrationPage extends StatefulWidget {
   final String userId;
 
@@ -23,15 +22,8 @@ class UserRegistrationPage extends StatefulWidget {
 class _UserRegistrationPageState extends State<UserRegistrationPage> {
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<UserService>(
-      builder: (context) => UserService.instance(widget.userId),
-      child: Consumer<UserService>(
-        builder: (context, userService, child) {
-          return UserCityWidget(
-            userId: widget.userId,
-          );
-        },
-      ),
+    return UserCityWidget(
+      userId: widget.userId,
     );
   }
 }
@@ -50,7 +42,8 @@ class _UserCityWidgetState extends State<UserCityWidget> {
   final _key = GlobalKey<ScaffoldState>();
 
   Map<String, dynamic> _selectedCity;
-
+  bool _isLoading = false;
+  bool _isCitySelected = false;
   String _pincode;
 
   @override
@@ -96,15 +89,15 @@ class _UserCityWidgetState extends State<UserCityWidget> {
                   print(snapshot.hasData);
                   print(snapshot.data);
                   if (snapshot.hasData) {
-
                     return ListView.builder(
                       itemCount: snapshot.data.length,
                       scrollDirection: Axis.horizontal,
-                      itemBuilder: (context, index){
+                      itemBuilder: (context, index) {
                         return InkWell(
                           onTap: () {
                             setState(() {
                               _selectedCity = snapshot.data[index].data;
+                              _isCitySelected = true;
                             });
                           },
                           child: Card(
@@ -139,9 +132,8 @@ class _UserCityWidgetState extends State<UserCityWidget> {
                                   child: Text(
                                     snapshot.data[index]['city'],
                                     style: GoogleFonts.ubuntu(
-                                      textStyle: Theme.of(context)
-                                          .textTheme
-                                          .subhead,
+                                      textStyle:
+                                          Theme.of(context).textTheme.subhead,
                                     ),
                                   ),
                                 ),
@@ -151,9 +143,8 @@ class _UserCityWidgetState extends State<UserCityWidget> {
                                   child: Text(
                                     snapshot.data[index]['pincode'],
                                     style: GoogleFonts.ubuntu(
-                                      textStyle: Theme.of(context)
-                                          .textTheme
-                                          .caption,
+                                      textStyle:
+                                          Theme.of(context).textTheme.caption,
                                     ),
                                   ),
                                 ),
@@ -171,10 +162,10 @@ class _UserCityWidgetState extends State<UserCityWidget> {
                     //   crossAxisSpacing: 4.0,
                     //   childAspectRatio: 0.88,
                     //   children: snapshot.data.map((document) {
-                        
+
                     //   }).toList(),
                     // );
-                    
+
                   } else {
                     return Center(
                       child: SpinKitCircle(
@@ -190,38 +181,52 @@ class _UserCityWidgetState extends State<UserCityWidget> {
               height: 16.0,
             ),
             RaisedButton(
-            onPressed: () async {
-              if (_selectedCity != null) {
-                print('User Registration Page - 218 : ${widget.userId}');
-                try {
-                  // userService.updateUserCity("widget.userId", _selectedCity['city'], _selectedCity['pincode']);
+              onPressed: _isCitySelected
+                  ? () async {
+                      setState(() {
+                        _isLoading = true;
+                      });
+                      if (_selectedCity != null) {
+                        print(
+                            'User Registration Page - 218 : ${widget.userId}');
+                        try {
+                          userService.updateUserCity(widget.userId,
+                              _selectedCity['city'], _selectedCity['pincode']);
 
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            UserNameWidget(userId: widget.userId),
-                      ));
-                } catch (e) {
-                  print(e.toString());
-                }
-
-                _selectedCity = null;
-              }
-            },
-            color: Colors.green,
-            padding: EdgeInsets.symmetric(vertical: 16.0),
-            child: Text(
-              "CONTINUE",
-              textAlign: TextAlign.center,
-              style: GoogleFonts.ubuntu(
-                          textStyle: Theme.of(context).textTheme.button.copyWith(
-                            fontSize: 20.0,
-                            fontWeight: FontWeight.bold
-                          ),
-                        )
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    UserNameWidget(userId: widget.userId),
+                              ));
+                        } catch (e) {
+                          print(e.toString());
+                        }
+                        setState(() {
+                          _isLoading = false;
+                          _isCitySelected = false;
+                        });
+                        _selectedCity = null;
+                      }
+                    }
+                  : null,
+              color: Colors.green,
+              padding: EdgeInsets.symmetric(vertical: 16.0),
+              child: _isLoading
+                  ? Container(
+                      // padding: EdgeInsets.all(8.0),
+                      child: SpinKitCircle(
+                        color: Colors.white,
+                        size: 24.0,
+                      ),
+                    )
+                  : Text("CONTINUE",
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.ubuntu(
+                        textStyle: Theme.of(context).textTheme.button.copyWith(
+                            fontSize: 20.0, fontWeight: FontWeight.bold),
+                      )),
             ),
-          ),
           ],
         ),
       ),
@@ -252,11 +257,12 @@ class _UserNameWidgetState extends State<UserNameWidget> {
   String _name;
   String _pincode;
   List<CityModel> cities;
+  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
     // final auth = Provider.of<AuthProvider>(context);
-    // final userService = Provider.of<UserService>(context);
+    final userService = Provider.of<UserService>(context);
     final cityService = Provider.of<CityService>(context);
 
     print(cities);
@@ -274,11 +280,11 @@ class _UserNameWidgetState extends State<UserNameWidget> {
                 Text(
                   'Tell us your name.',
                   style: GoogleFonts.ubuntu(
-                  textStyle: Theme.of(context)
-                      .textTheme
-                      .display1
-                      .copyWith(fontWeight: FontWeight.bold),
-                ),
+                    textStyle: Theme.of(context)
+                        .textTheme
+                        .display1
+                        .copyWith(fontWeight: FontWeight.bold),
+                  ),
                 ),
                 SizedBox(
                   height: 32.0,
@@ -286,9 +292,7 @@ class _UserNameWidgetState extends State<UserNameWidget> {
                 Container(
                   child: TextFormField(
                     controller: _nameController,
-                    style: GoogleFonts.ubuntu(
-                    
-                  ),
+                    style: GoogleFonts.ubuntu(),
                     decoration: InputDecoration(
                       border: UnderlineInputBorder(),
                       hintText: "Name",
@@ -307,6 +311,11 @@ class _UserNameWidgetState extends State<UserNameWidget> {
                       }
                       return null;
                     },
+                    onChanged: (value){
+                      setState(() {
+                       _name = value; 
+                      });
+                    },
                     onSaved: (value) {
                       setState(() {
                         _name = value;
@@ -318,30 +327,51 @@ class _UserNameWidgetState extends State<UserNameWidget> {
                   height: 16.0,
                 ),
                 RaisedButton(
-                  onPressed: () async {
+                  onPressed: (_nameController.text.trim() != '') ? () async {
+
+                    setState(() {
+                     _isLoading = true; 
+                    });
+
                     if (_formKey.currentState.validate()) {
                       _formKey.currentState.save();
 
-                      // print(this._selectedCity['city']);
-                      // widget.updateIndex();
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => UserEmailWidget(),
-                          ));
+                      try {
+                        userService.updateDisplayName(widget.userId, _name);
+
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => UserEmailWidget(
+                                userId: widget.userId,
+                              ),
+                            ));
+                      } catch (e) {
+                        print(e.toString());
+                      }
                     }
-                  },
+                    setState(() {
+                     _isLoading = false; 
+                    });
+                    _name = null;
+                  } : null,
                   color: Colors.green,
                   padding: EdgeInsets.symmetric(vertical: 16.0),
-                  child: Text(
+                  child: _isLoading
+                  ? Container(
+                      // padding: EdgeInsets.all(8.0),
+                      child: SpinKitCircle(
+                        color: Colors.white,
+                        size: 24.0,
+                      ),
+                    )
+                  : Text(
                     "CONTINUE",
                     textAlign: TextAlign.center,
                     style: GoogleFonts.ubuntu(
-                              textStyle: Theme.of(context).textTheme.button.copyWith(
-                                fontSize: 20.0,
-                                fontWeight: FontWeight.bold
-                              ),
-                            ),
+                      textStyle: Theme.of(context).textTheme.button.copyWith(
+                          fontSize: 20.0, fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ),
                 SizedBox(
@@ -377,11 +407,13 @@ class _UserEmailWidgetState extends State<UserEmailWidget> {
   String _name;
   String _pincode;
   List<CityModel> cities;
+  bool _isLoading = false;
+
 
   @override
   Widget build(BuildContext context) {
     // final auth = Provider.of<AuthProvider>(context);
-    // final userService = Provider.of<UserService>(context);
+    final userService = Provider.of<UserService>(context);
     final cityService = Provider.of<CityService>(context);
 
     print(cities);
@@ -400,9 +432,9 @@ class _UserEmailWidgetState extends State<UserEmailWidget> {
                   'Enter your email.',
                   style: GoogleFonts.ubuntu(
                     textStyle: Theme.of(context)
-                      .textTheme
-                      .display1
-                      .copyWith(fontWeight: FontWeight.bold),
+                        .textTheme
+                        .display1
+                        .copyWith(fontWeight: FontWeight.bold),
                   ),
                 ),
                 SizedBox(
@@ -411,9 +443,7 @@ class _UserEmailWidgetState extends State<UserEmailWidget> {
                 Container(
                   child: TextFormField(
                     controller: _emailController,
-                    style: GoogleFonts.ubuntu(
-                    
-                  ),
+                    style: GoogleFonts.ubuntu(),
                     decoration: InputDecoration(
                       border: UnderlineInputBorder(),
                       hintText: "Email",
@@ -432,6 +462,11 @@ class _UserEmailWidgetState extends State<UserEmailWidget> {
                       }
                       return null;
                     },
+                    onChanged: (value){
+                      setState(() {
+                       _name = value; 
+                      });
+                    },
                     onSaved: (value) {
                       setState(() {
                         _name = value;
@@ -443,28 +478,31 @@ class _UserEmailWidgetState extends State<UserEmailWidget> {
                   height: 16.0,
                 ),
                 RaisedButton(
-                  onPressed: () async {
+                  onPressed: (_emailController.text.trim() != '') ? () async {
                     if (_formKey.currentState.validate()) {
                       _formKey.currentState.save();
 
-                      Navigator.push(context, 
-                      MaterialPageRoute(
-                        builder: (context) => HomePage()
-                      ),);
+                      try {
+                        userService.updateEmail(widget.userId, _name);
+
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => HomePage(),
+                            ));
+                      } catch (e) {
+                        print(e.toString());
+                      }
                     }
-                  },
+                  } : null,
                   color: Colors.green,
                   padding: EdgeInsets.symmetric(vertical: 16.0),
-                  child: Text(
-                    "LET'S START",
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.ubuntu(
-                              textStyle: Theme.of(context).textTheme.button.copyWith(
-                                fontSize: 20.0,
-                                fontWeight: FontWeight.bold
-                              ),
-                            )
-                  ),
+                  child: Text("LET'S START",
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.ubuntu(
+                        textStyle: Theme.of(context).textTheme.button.copyWith(
+                            fontSize: 20.0, fontWeight: FontWeight.bold),
+                      )),
                 ),
                 SizedBox(
                   height: 16.0,

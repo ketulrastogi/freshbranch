@@ -38,7 +38,7 @@ class _HomePageState extends State<HomePage>
               padding: const EdgeInsets.all(8.0),
               child: InkWell(
                 onTap: (){
-                  // FirebaseAuth.instance.signOut();
+                  FirebaseAuth.instance.signOut();
                   
                 },
                               child: Text(

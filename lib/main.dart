@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -59,6 +60,9 @@ class _HomeShopAppState extends State<HomeShopApp> {
           ChangeNotifierProvider<CartService>(
             builder: (context) => CartService.instance(),
           ),
+          ChangeNotifierProvider<UserService>(
+            builder: (context) => UserService(),
+          ),
         ],
         child: MaterialApp(
           title: 'Fresh Branch',
@@ -88,7 +92,7 @@ class _SplashScreenState extends State<SplashScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => InitialPage(),
+          builder: (context) => InitialRoutePage(),
         ),
       );
     });
@@ -112,15 +116,15 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 }
 
-class InitialPage extends StatefulWidget {
+class InitialRoutePage extends StatefulWidget {
   final String title;
 
-  const InitialPage({Key key, this.title}) : super(key: key);
+  const InitialRoutePage({Key key, this.title}) : super(key: key);
   @override
-  _InitialPageState createState() => _InitialPageState();
+  _InitialRoutePageState createState() => _InitialRoutePageState();
 }
 
-class _InitialPageState extends State<InitialPage> {
+class _InitialRoutePageState extends State<InitialRoutePage> {
   @override
   Widget build(BuildContext context) {
     return Consumer(
@@ -142,15 +146,79 @@ class _InitialPageState extends State<InitialPage> {
             return VerifyCodePage();
           case Status.Authenticated:
             return ChangeNotifierProvider<UserService>(
-              builder: (context) =>
-                  UserService.instance(authService.response['user']),
-              child: UserRegistrationPage(
+              builder: (context) => UserService(),
+              child: UserRoutePage(
                 userId: authService.response['user'].toString(),
               ),
             );
           default:
             return VerifyPhonePage();
         }
+      },
+    );
+  }
+}
+
+class UserRoutePage extends StatefulWidget {
+  final String userId;
+
+  const UserRoutePage({Key key, this.userId}) : super(key: key);
+  @override
+  _UserRoutePageState createState() => _UserRoutePageState();
+}
+
+class _UserRoutePageState extends State<UserRoutePage> {
+  @override
+  Widget build(BuildContext context) {
+    final UserService userService = Provider.of<UserService>(context);
+    final AuthService authService = Provider.of<AuthService>(context);
+    return FutureBuilder<FirebaseUser>(
+      future: authService.getCurrentUser(),
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          return StreamBuilder<UserModel>(
+              stream: userService.getCurrentUserDetails(snapshot.data.uid),
+              builder: (context, snapshot) {
+                print(snapshot.data);
+                if (snapshot.hasData) {
+                  UserModel user = snapshot.data;
+                  print(user.displayName);
+                  print(user.city);
+                  print(user.pincode);
+                  print(user.email);
+                  print(user.phoneNumber);
+                  if (user.displayName != null &&
+                      user.city != null &&
+                      user.pincode != null &&
+                      user.email != null) {
+                    return HomePage();
+                  } else {
+                    return UserRegistrationPage(
+                      userId: widget.userId,
+                    );
+                  }
+                } else {
+                  return Scaffold(
+                    body: Center(
+                      child: Container(
+                        height: 56.0,
+                        width: 56.0,
+                        child: CircularProgressIndicator(),
+                      ),
+                    ),
+                  );
+                }
+              });
+        }
+        return Scaffold(
+          body: Center(
+            child: Container(
+              height: 56.0,
+              width: 56.0,
+              child: CircularProgressIndicator(),
+            ),
+          ),
+        );
       },
     );
   }

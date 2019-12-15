@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:freshbranch/services/city_service.dart';
 
@@ -45,16 +46,21 @@ class UserModel {
   }
 }
 
-class UserService with ChangeNotifier{
+enum UserStatus { UPDATED, NOTUPDATED }
+
+class UserService with ChangeNotifier {
   String userId;
-  Firestore _db;
+  Firestore _db = Firestore.instance;
+  FirebaseAuth _auth = FirebaseAuth.instance;
   UserModel user;
-  UserService.instance(this.userId) : _db = Firestore.instance {
-    _db
+  UserStatus userStatus = UserStatus.NOTUPDATED;
+
+  getUser() {
+    return _db
         .collection('users')
         .where('userId', isEqualTo: userId)
         .snapshots()
-        .listen((QuerySnapshot querySnapshot) {
+        .map((QuerySnapshot querySnapshot) {
       querySnapshot.documents.map((DocumentSnapshot documentSnapshot) {
         Map<String, dynamic> data = documentSnapshot.data;
         if (data != null) {
@@ -73,24 +79,52 @@ class UserService with ChangeNotifier{
               (data.containsKey('pincode') && data['pincode'] != null)
                   ? data['pincode']
                   : null;
+          if (user.displayName != null &&
+              user.city != null &&
+              user.pincode != null &&
+              user.email != null) {
+            userStatus = UserStatus.UPDATED;
+            notifyListeners();
+          } else {
+            userStatus = UserStatus.NOTUPDATED;
+            notifyListeners();
+          }
+        } else {
+          userStatus = UserStatus.NOTUPDATED;
+          notifyListeners();
         }
       });
     });
   }
 
-  Stream<UserModel> getCurrentUserDetails(String uid) {
+
+  Stream<UserModel> getCurrentUserDetails(String userId) {
+
     return _db
-        .collection('users')
-        .where('userId', isEqualTo: uid)
-        .snapshots()
-        .map((QuerySnapshot querySnapshot) {
-      return querySnapshot.documents.map((documentSnapshot) {
-        return UserModel.fromFirestore(documentSnapshot);
-      }).toList()[0];
-    });
+          .collection('users')
+          .document(userId)
+          .snapshots()
+          .map((DocumentSnapshot documentSnapshot) => UserModel.fromFirestore(documentSnapshot));
+
+      // return _db
+      //     .collection('users')
+      //     .where('userId', isEqualTo: 'G3B0opA5gcO6KKo61S0uv9DRDNu1')
+      //     .snapshots()
+      //     .map((QuerySnapshot querySnapshot) {
+      //   return querySnapshot.documents.map((documentSnapshot) {
+      //     return UserModel.fromFirestore(documentSnapshot);
+      //   }).toList()[0];
+      // });
   }
 
-  Future<void> updateUserDetails(String userId, String displayName, String phoneNumber, String email, String city, String pincode, bool isAvailable) async {
+  Future<void> updateUserDetails(
+      String userId,
+      String displayName,
+      String phoneNumber,
+      String email,
+      String city,
+      String pincode,
+      bool isAvailable) async {
     print('User Service - 94 : $userId');
     await _db.collection('users').document(userId).setData({
       'displayName': displayName,
